@@ -25,7 +25,10 @@ public class Interprete {
 
     private static void ejecutarArchivo(String path) throws IOException {
         byte[] bytes = Files.readAllBytes(Paths.get(path));
-        ejecutar(new String(bytes, Charset.defaultCharset()));
+        String test = new String(bytes, Charset.defaultCharset());
+        System.out.println(test);
+        ejecutar(test);
+       // ejecutar(new String(bytes, Charset.defaultCharset()));
 
         // Se indica que existe un error
         if(existenErrores) System.exit(65);

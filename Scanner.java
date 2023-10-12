@@ -32,200 +32,238 @@ public class Scanner {
         this.source = source + " ";
     }
 
+    static boolean esRango(char c, String patt) {
+        int estado = 0;
+        char rangoInicial = '\0';
+        for (char ca : patt.toCharArray()) {
+            switch (estado) {
+                case 0:
+                    switch (ca) {
+                        case '\\':
+                            estado = 3;
+                            break;
+                        case '>':
+                            estado = 1;
+                            break;
+                        default:
+                            if (c == ca) {
+                                return true;
+                            }
+                            break;
+                    }
+                    break;
+                case 1:
+                    rangoInicial = ca;
+                    estado = 2;
+                    break;
+                case 2:
+                    for (; rangoInicial <= ca; rangoInicial++) {
+                        if (c == rangoInicial) {
+                            return true;
+                        }
+                    }
+                    estado = 0;
+                    break;
+                case 3:
+                    if (c == ca) {
+                        return true;
+                    }
+                    estado = 0;
+                    break;
+            }
+        }
+        return false;
+    }
+
     public List<Token> scan() throws Exception {
         int estado = 0;
+        int linea = 0;
         String lexema = "";
         char c;
 
         for (int i = 0; i < source.length(); i++) {
             c = source.charAt(i);
-
+            int estadonuevo = -1;
             switch (estado) {
-                case 0:// operadores
-                    if (c == '>') {
-                        estado = 1;
+                case 0:
+                    if (esRango(c, "\\>")) {
                         lexema += c;
-                    } else if (c == '<') {
-                        estado = 4;
+                        estadonuevo = 1;
+                        break;
+                    }
+                    if(esRango(c, "<")) {
                         lexema += c;
-
-                    } else if (c == '=') {
-                        estado = 6;
+                        estadonuevo = 4;
+                        break;
+                    }
+                    if(esRango(c, "=")) {
                         lexema += c;
-                    } else if (c == '!') {
-                        estado = 8;
+                        estadonuevo = 7;
+                        break;
+                    }
+                    if(esRango(c, "!")) {
                         lexema += c;
-                    } else if (Character.isLetter(c)) {
-                        estado = 10;
+                        estadonuevo = 10;
+                        break;
+                    }
+                    if(esRango(c, ">az>AZ")) {
                         lexema += c;
-                    } else if (Character.isDigit(c)) {
-                        estado = 11;
+                        estadonuevo = 13;
+                        break;
+                    }
+                    if(esRango(c, ">09")){
                         lexema += c;
-
-                    } else if (c == '"') {
-                        estado = 17;
+                        estadonuevo = 15;
+                        break;
+                    }
+                    if(esRango(c, "\"")){
                         lexema += c;
-                    } else if (c == '/') {
-                        estado = 19;
+                        estadonuevo = 24;
+                        break;
+                    }
+                    if(esRango(c, ";")){
                         lexema += c;
-
+                        tokens.add(new Token(TipoToken.SEMICOLON, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, ",")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.COMMA, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, "(")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.LEFT_PAREN, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, ")")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.RIGHT_PAREN, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    
+                    if(esRango(c, "{")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.LEFT_BRACE, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, "}")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.RIGHT_BRACE, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, "+")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.PLUS, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, "-")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.MINUS, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    if(esRango(c, "*")){
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.STAR, lexema));
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    
+                    if(esRango(c, "/")){
+                        estadonuevo = 26;
+                        break;
+                    }
+                    //Desechar
+                    if(esRango(c, "\n")){
+                        linea++;
+                        lexema = "";
+                        estadonuevo = 0;
+                        break;
+                    }
+                    
+                    if(esRango(c, "\r")){
+                        lexema = "";
+                        estadonuevo = 0;
+                        break;
+                    }
+                    if(esRango(c, " ")){
+                        lexema = "";
+                        estadonuevo = 0;
+                        break;
                     }
                     break;
                 case 1:
-                    if (c == '=') {
-                        estado = 2;
+                    estadonuevo = 0;
+                    if(esRango(c, "=")){
                         lexema += c;
-                    } else {
-                        TipoToken gt = palabrasReservadas.get(lexema);
-
-                        if (gt == null) {
-                            Token gtt = new Token(TipoToken.GREATER, lexema);
-                            tokens.add(gtt);
-                        }
-                        estado = 0;
+                        tokens.add(new Token(TipoToken.GREATER_EQUAL, lexema));
                         lexema = "";
-                        i--;
+                        break;
                     }
-                    break;
-                case 2:
-                    TipoToken ge = palabrasReservadas.get(lexema);
-
-                    if (ge == null) {
-                        Token get = new Token(TipoToken.GREATER_EQUAL, lexema);
-                        tokens.add(get);
-                    }
-                    estado = 0;
-                    lexema = "";
+                    tokens.add(new Token(TipoToken.GREATER, lexema));
                     i--;
+                    lexema = "";
                     break;
+                    
                 case 4:
-                    if (c == '=') {
-                        estado = 5;
+                    estadonuevo = 0;
+                    if(esRango(c, "=")){
                         lexema += c;
-                    } else {
-                        TipoToken lt = palabrasReservadas.get(lexema);
-
-                        if (lt == null) {
-                            Token ltt = new Token(TipoToken.LESS, lexema);
-                            tokens.add(ltt);
-                        }
-                        estado = 0;
+                        tokens.add(new Token(TipoToken.LESS_EQUAL, lexema));
                         lexema = "";
-                        i--;
+                        break;
                     }
-                    break;
-                case 5:
-                    TipoToken le = palabrasReservadas.get(lexema);
-
-                    if (le == null) {
-                        Token let = new Token(TipoToken.LESS_EQUAL, lexema);
-                        tokens.add(let);
-                    }
-                    estado = 0;
-                    lexema = "";
+                    tokens.add(new Token(TipoToken.LESS, lexema));
                     i--;
-                    break;
-                case 6:
-                    if (c == '=') {
-                        estado = 7;
-                        lexema += c;
-                    } else {
-                        TipoToken et = palabrasReservadas.get(lexema);
-
-                        if (et == null) {
-                            Token ett = new Token(TipoToken.EQUAL, lexema);
-                            tokens.add(ett);
-                        }
-                        estado = 0;
-                        lexema = "";
-                        i--;
-                    }
-                    break;
+                    lexema = "";
+                break;
+                
                 case 7:
-                    TipoToken ee = palabrasReservadas.get(lexema);
-
-                    if (ee == null) {
-                        Token eet = new Token(TipoToken.EQUAL_EQUAL, lexema);
-                        tokens.add(eet);
-                    }
-                    estado = 0;
-                    lexema = "";
-                    i--;
-                    break;
-                case 8:
-                    if (c == '=') {
-                        estado = 9;
+                    estadonuevo = 0;
+                    if(esRango(c, "=")){
                         lexema += c;
-                    } else {
-                        TipoToken bt = palabrasReservadas.get(lexema);
-
-                        if (bt == null) {
-                            Token btt = new Token(TipoToken.BANG, lexema);
-                            tokens.add(btt);
-                        }
-                        estado = 0;
+                        tokens.add(new Token(TipoToken.EQUAL_EQUAL, lexema));
                         lexema = "";
-                        i--;
+                        break;
                     }
-                    break;
-                case 9:
-                    TipoToken bet = palabrasReservadas.get(lexema);
-
-                    if (bet == null) {
-                        Token bett = new Token(TipoToken.BANG_EQUAL, lexema);
-                        tokens.add(bett);
-                    }
-                    estado = 0;
-                    lexema = "";
+                    tokens.add(new Token(TipoToken.EQUAL, lexema));
                     i--;
-                    break;
+                    lexema = "";
+                break;
+                
                 case 10:
-                    if (Character.isLetter(c) || Character.isDigit(c)) {
-                        estado = 10;
+                    estadonuevo = 0;
+                    if(esRango(c, "=")){
                         lexema += c;
-                    } else {
-                        // Vamos a crear el Token de identificador o palabra reservada
-                        TipoToken tt = palabrasReservadas.get(lexema);
-
-                        if (tt == null) {
-                            Token t = new Token(TipoToken.IDENTIFIER, lexema);
-                            tokens.add(t);
-                        } else {
-                            Token t = new Token(tt, lexema);
-                            tokens.add(t);
-                        }
-
-                        estado = 0;
+                        tokens.add(new Token(TipoToken.BANG_EQUAL, lexema));
                         lexema = "";
-                        i--;
+                        break;
                     }
-                    break;
-
-                // if (Character.isLetter(c)) {
-                // estado = 13;
-                // lexema += c;
-                // } else if (Character.isDigit(c)) {
-                // estado = 15;
-                // lexema += c;
-
-                /*
-                 * while(Character.isDigit(c)){
-                 * lexema += c;
-                 * i++;
-                 * c = source.charAt(i);
-                 * }
-                 * Token t = new Token(TipoToken.NUMBER, lexema, Integer.valueOf(lexema));
-                 * lexema = "";
-                 * estado = 0;
-                 * tokens.add(t);
-                 */
-
-                // }
-                // break;
-
+                    tokens.add(new Token(TipoToken.BANG, lexema));
+                    i--;
+                    lexema = "";
+                break;
+                    
                 case 13:
-                    if (Character.isLetterOrDigit(c)) {
-                        estado = 13;
+                    if (esRango(c, ">az>AZ>09")) {
+                        estadonuevo = 13;
                         lexema += c;
                     } else {
                         TipoToken tt = palabrasReservadas.get(lexema);
@@ -238,7 +276,7 @@ public class Scanner {
                             tokens.add(t);
                         }
 
-                        estado = 0;
+                        estadonuevo = 0;
                         lexema = "";
                         i--;
 
@@ -246,23 +284,156 @@ public class Scanner {
                     break;
 
                 case 15:
-                    if (Character.isDigit(c)) {
-                        estado = 15;
+                    if (esRango(c, ">09")) {
+                        estadonuevo = 15;
                         lexema += c;
-                    } else if (c == '.') {
-
-                    } else if (c == 'E') {
-
-                    } else {
-                        Token t = new Token(TipoToken.NUMBER, lexema, Integer.valueOf(lexema));
-                        tokens.add(t);
-
-                        estado = 0;
-                        lexema = "";
-                        i--;
+                        break;
+                    }
+                    if (esRango(c, ".")) {
+                        estadonuevo = 16;
+                        lexema += c;
+                        break;
+                    }
+                    if (esRango(c, "Ee")) {
+                        estadonuevo = 18;
+                        lexema += c;
+                        break;
+                    } 
+                    tokens.add(new Token(TipoToken.NUMBER, lexema, Integer.valueOf(lexema)));
+                    estadonuevo = 0;
+                    lexema = "";
+                    i--;
+                    break;
+                case 16:
+                    if(esRango(c, ">09")) {
+                        estadonuevo = 17;
+                        lexema += c;
+                        break;
                     }
                     break;
+                case 17:
+                    if(esRango(c, ">09")){
+                        estadonuevo = 17;
+                        lexema += c;
+                        break;
+                    }
+                    if(esRango(c, "Ee")){
+                        estadonuevo = 18;
+                        lexema += c;
+                        break;
+                    }
+                    tokens.add(new Token(TipoToken.NUMBER, lexema, Double.valueOf(lexema)));
+                    estadonuevo = 0;
+                    lexema = "";
+                    i--;
+                    break;
+                case 18:
+                    if(esRango(c, "+-")){
+                        estadonuevo = 19;
+                        lexema += c;
+                        break;
+                    }
+                    if(esRango(c, ">09")){
+                        estadonuevo = 20;
+                        lexema += c;
+                        break;
+                    }
+                    break;
+                case 19:
+                    if(esRango(c, ">09")){
+                        estadonuevo = 20;
+                        lexema += c;
+                        break;
+                    }
+                    break;
+                case 20:
+                    if(esRango(c, ">09")){
+                        estadonuevo = 20;
+                        lexema += c;
+                        break;
+                    }
+                    break;
+                case 24:
+                    if(esRango(c, "\"")){
+                        estadonuevo = 0;
+                        lexema += c;
+                        tokens.add(new Token(TipoToken.STRING, 
+                                lexema,
+                                lexema.substring(1, lexema.length() - 1)));
+                        lexema = "";
+                        break;
+                        
+                    }
+                    if(esRango(c, "\n\r")){
+                        linea++;
+                        estadonuevo = 0;
+                        Interprete.error(linea, "Salto de línea inesperado dentro de String");
+                    }
+                    
+                    estadonuevo = 24;
+                    lexema += c;
+                    break;
+                case 26:
+                    if(esRango(c, "*")){
+                        estadonuevo = 27;
+                        lexema += c;
+                        break;
+                    }
+                    
+                    if(esRango(c, "/")){
+                        estadonuevo = 30;
+                        lexema += c;
+                        break;
+                    }
+                    
+                    estadonuevo = 0;
+                    tokens.add(new Token(TipoToken.SLASH, lexema));
+                    lexema = "";
+                    i--;
+                    break;
+                    
+                case 27:
+                    if(esRango(c, "*")){
+                        estadonuevo = 28;
+                        lexema += c;
+                        break;
+                    }
+                    estadonuevo = 27;
+                    lexema += c;
+                    break;
+                case 28:
+                    if(esRango(c, "*")){
+                        estadonuevo = 28;
+                        lexema += c;
+                        break;
+                    }
+                    
+                    if(esRango(c, "/")){
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    estadonuevo = 27;
+                    lexema += c;
+                    break;
+                case 30:
+                    if(esRango(c, "\n\r")){
+                        estadonuevo = 0;
+                        lexema = "";
+                        break;
+                    }
+                    estadonuevo = 30;
+                    lexema += c;
+                    break;
+                
             }
+            
+            if(estadonuevo == -1){
+                Interprete.error(linea, "No hay transiciones para el caractér en " + linea + " '" + c + "'");
+                estadonuevo = 0;
+            }
+            
+            estado = estadonuevo;
 
         }
 
